@@ -26,6 +26,17 @@
             cursor: pointer;
         }
 
+        #clearResults {
+            background-color: lightgray;
+            color: black;
+            font-size: 1em;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
         #results-space {
             margin-bottom: 20px;
         }
@@ -44,18 +55,19 @@
 
 <body>
     <div id="map"></div>
-    <p>Enter Address or Scroll the Map: <input type="text" id="addressInput">
+    <p>Enter Address: <input type="text" id="addressInput">
         <button id="searchAddress">Search</button>
     </p>
     <p>
         Enter Your Annual Rainfall (in inches):
-        <input type="number" id="rainfall" />
+        <input type="number" id="rainfall" value="12" />
         <br />
         <a href="https://precip.ai/rainfall-totals/zipcode/" target="_blank">
-            Find Your Rainfall by Zip Code
+            Find Rainfall by Zip Code
         </a>
     </p>
     <button id="calculate">Calculate</button>
+    <button id="clearResults">Clear Results</button>
     <div id="results-space"></div>
     <p>Area (square feet): <span id="area"></span></p>
     <p>Potential Annual Rainwater Harvesting in Gallons: <span id="capture"></span></p>
@@ -67,13 +79,8 @@
             function initializeMap() {
                 const map = L.map('map').setView([32.7157, -117.1611], 11);
 
-                // Set max zoom level to 19 for more zoom in
-                L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoidGhlcGVybWFjdWx0dXJlbGFiIiwiYSI6ImNtOGs5d2Y5bzBrdGkyanB0aXpsd254a3YifQ.5pF_SIB5dJQGQy-Q6jTExg', {
-                    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-                    maxZoom: 23, // Increase max zoom level to 23
-                    id: 'mapbox/satellite-v9',
-                    tileSize: 512,
-                    zoomOffset: -1,
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 }).addTo(map);
 
                 let drawnItems = new L.FeatureGroup().addTo(map);
@@ -82,10 +89,14 @@
                         featureGroup: drawnItems
                     },
                     draw: {
-                        circle: false,
                         marker: false,
-                        circlemarker: false,
                         polyline: false,
+                        polygon: {
+                            allowIntersection: false, // Disable polygon intersection
+                            showArea: true, // Show area when drawing
+                        },
+                        circle: false,
+                        circlemarker: false,
                     },
                 });
 
@@ -98,39 +109,23 @@
                     let areaMeters = turf.area(geojson);
                     let areaFeet = Math.round(areaMeters * 10.7639);
                     document.getElementById('area').textContent = areaFeet.toLocaleString();
-                    let rainfall = parseFloat(document.getElementById('rainfall').value) || 0;
-                    let capture = rainfall * areaFeet * 0.623;
+                    let rainfall = parseFloat(document.getElementById('rainfall').value);
+                    let capture = areaFeet * rainfall * 0.62; // conversion factor for gallons per inch of rain
                     document.getElementById('capture').textContent = capture.toLocaleString();
-                    document.getElementById('gallonsPerInch').textContent = (areaFeet * 0.623).toLocaleString();
+                    document.getElementById('gallonsPerInch').textContent = (areaFeet * 0.62).toLocaleString();
                 });
 
-                // Handle address search functionality
-                document.getElementById('searchAddress').addEventListener('click', function() {
-                    const address = document.getElementById('addressInput').value;
-                    const accessToken = 'pk.eyJ1IjoidGhlcGVybWFjdWx0dXJlbGFiIiwiYSI6ImNtOGs5d2Y5bzBrdGkyanB0aXpsd254a3YifQ.5pF_SIB5dJQGQy-Q6jTExg';
-
-                    if (address) {
-                        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${accessToken}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.features && data.features.length > 0) {
-                                    const coordinates = data.features[0].center;
-                                    map.setView([coordinates[1], coordinates[0]], 19);  // Zoom level 19 for detailed view
-                                } else {
-                                    alert('Address not found.');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error geocoding address:', error);
-                                alert('An error occurred while searching for the address.');
-                            });
-                    } else {
-                        alert('Please enter an address.');
-                    }
+                // Clear results
+                document.getElementById('clearResults').addEventListener('click', function() {
+                    document.getElementById('area').textContent = '';
+                    document.getElementById('capture').textContent = '';
+                    document.getElementById('gallonsPerInch').textContent = '';
+                    drawnItems.clearLayers();
                 });
             }
+
             initializeMap();
-        };
+        }
     </script>
 </body>
 </html>
