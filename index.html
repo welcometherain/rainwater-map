@@ -16,15 +16,17 @@
             font-weight: bold;
         }
 
-        #clearResults {
+        #clearResults, #calculate {
             background-color: pink;
             color: black;
-            font-size: 1em;
+            font-size: 1.2em;
             padding: 10px 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             margin-top: 10px;
+            display: inline-block;
+            width: auto;
         }
 
         #results-space {
@@ -58,6 +60,7 @@
             Find Rainfall by Zip Code
         </a>
     </p>
+    <button id="calculate">Calculate</button>
     <button id="clearResults">Clear Results</button>
     <div id="results-space"></div>
     <p>Area (square feet): <span id="area"></span></p>
@@ -119,6 +122,14 @@
                 let capture = areaFeet * rainfall * 0.62; // conversion factor for gallons per inch of rain
                 document.getElementById('capture').textContent = capture.toLocaleString();
                 document.getElementById('gallonsPerInch').textContent = (areaFeet * 0.62).toLocaleString();
+            });
+
+            // Calculate button event listener
+            document.getElementById('calculate').addEventListener('click', function() {
+                let areaText = document.getElementById('area').textContent;
+                if (areaText && areaText !== '') {
+                    alert("Results will update automatically when a polygon is drawn.");
+                }
             });
 
             // Clear results
