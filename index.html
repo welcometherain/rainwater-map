@@ -10,15 +10,13 @@
             width: 100%;
         }
 
-        #area,
-        #capture,
-        #gallonsPerInch {
+        #area, #capture, #gallonsPerInch {
             font-weight: bold;
         }
 
         #clearResults, #calculate {
-            background-color: pink;
-            color: black;
+            background-color: #EC19C2;
+            color: white;
             font-size: 1.2em;
             padding: 10px 20px;
             border: none;
@@ -43,18 +41,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.14/leaflet.draw.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.14/leaflet.draw.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-    <script src="https://unpkg.com/mapbox-gl@2.9.1/dist/mapbox-gl.js"></script>
-    <link href="https://unpkg.com/mapbox-gl@2.9.1/dist/mapbox-gl.css" rel="stylesheet" />
-</head>
 
+</head>
 <body>
     <div id="map"></div>
-    <p>Enter Address or Scroll the Map: <input type="text" id="addressInput">
+    <p>Enter Address: <input type="text" id="addressInput">
         <button id="searchAddress">Search</button>
     </p>
     <p>
         Enter Your Annual Rainfall (in inches):
-        <input type="number" id="rainfall" value="12" />
+        <input type="number" id="rainfall" value="12"/>
         <br />
         <a href="https://precip.ai/rainfall-totals/zipcode/" target="_blank">
             Find Rainfall by Zip Code
@@ -69,94 +65,87 @@
     <div id="areasList"></div>
 
     <script>
-        window.onload = function() {
-            // Create Mapbox map with hybrid (satellite) view
-            mapboxgl.accessToken = 'pk.eyJ1IjoidGhlcGVybWFjdWx0dXJlbGFiIiwiYSI6ImNtOGs5d2Y5bzBrdGkyanB0aXpsd254a3YifQ.5pF_SIB5dJQGQy-Q6jTExg';
-            const map = new mapboxgl.Map({
-                container: 'map',
-                style: 'mapbox://styles/mapbox/satellite-streets-v11', // Hybrid map style (satellite with streets)
-                center: [ -117.1611, 32.7157 ],
-                zoom: 12,
-                maxZoom: 23 // Set max zoom level to 23
-            });
+        let map = L.map('map').setView([32.7157, -117.1611], 11);
 
-            // Add zoom and rotation controls to the map
-            map.addControl(new mapboxgl.NavigationControl());
+        let satellite = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>',
+            maxZoom: 23
+        });
 
-            // Create Leaflet map
-            const leafletMap = L.map('map').setView([32.7157, -117.1611], 11);
+        let hybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>',
+            maxZoom: 23
+        });
 
-            // Use Mapbox Hybrid Tiles with Leaflet
-            L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=' + mapboxgl.accessToken, {
-                attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery &copy; <a href="https://www.mapbox.com/">Mapbox</a>',
-                maxZoom: 23, // Set max zoom level to 23
-            }).addTo(leafletMap);
+        let baseMaps = {
+            "Satellite": satellite,
+            "Hybrid": hybrid
+        };
 
-            let drawnItems = new L.FeatureGroup().addTo(leafletMap);
-            let drawControl = new L.Control.Draw({
-                edit: {
-                    featureGroup: drawnItems
-                },
-                draw: {
-                    marker: false,
-                    polyline: false,
-                    polygon: {
-                        allowIntersection: false, // Disable polygon intersection
-                        showArea: true, // Show area when drawing
-                    },
-                    circle: false,
-                    circlemarker: false,
-                },
-            });
+        satellite.addTo(map);
+        L.control.layers(baseMaps).addTo(map);
 
-            leafletMap.addControl(drawControl);
+        let drawnItems = new L.FeatureGroup().addTo(map);
+        new L.Control.Draw({
+            edit: {
+                featureGroup: drawnItems
+            },
+            draw: {
+                polygon: true,
+                rectangle: false, // Square tool removed
+                circle: false,
+                marker: false,
+                circlemarker: false,
+                polyline: false,
+            },
+        }).addTo(map);
 
-            leafletMap.on(L.Draw.Event.CREATED, function(event) {
-                let layer = event.layer;
-                drawnItems.addLayer(layer);
-                let geojson = layer.toGeoJSON();
-                let areaMeters = turf.area(geojson);
-                let areaFeet = Math.round(areaMeters * 10.7639);
-                document.getElementById('area').textContent = areaFeet.toLocaleString();
-                let rainfall = parseFloat(document.getElementById('rainfall').value);
-                let capture = areaFeet * rainfall * 0.62; // conversion factor for gallons per inch of rain
-                document.getElementById('capture').textContent = capture.toLocaleString();
-                document.getElementById('gallonsPerInch').textContent = (areaFeet * 0.62).toLocaleString();
-            });
+        map.on(L.Draw.Event.CREATED, function(event) {
+            let layer = event.layer;
+            drawnItems.addLayer(layer);
+            let geojson = layer.toGeoJSON();
+            let areaMeters = turf.area(geojson);
+            let areaFeet = Math.round(areaMeters * 10.7639);
+            document.getElementById('area').textContent = areaFeet.toLocaleString();
+        });
 
-            // Calculate button event listener
-            document.getElementById('calculate').addEventListener('click', function() {
-                let areaText = document.getElementById('area').textContent;
-                if (areaText && areaText !== '') {
-                    alert("Results will update automatically when a polygon is drawn.");
-                }
-            });
+        document.getElementById('clearResults').addEventListener('click', function() {
+            drawnItems.clearLayers();
+            document.getElementById('area').textContent = "";
+            document.getElementById('capture').textContent = "";
+            document.getElementById('gallonsPerInch').textContent = "";
+        });
 
-            // Clear results
-            document.getElementById('clearResults').addEventListener('click', function() {
-                document.getElementById('area').textContent = '';
-                document.getElementById('capture').textContent = '';
-                document.getElementById('gallonsPerInch').textContent = '';
-                drawnItems.clearLayers();
-            });
+        document.getElementById('calculate').addEventListener('click', function() {
+            let area = parseFloat(document.getElementById('area').textContent.replace(/,/g, ''));
+            let rainfall = parseFloat(document.getElementById('rainfall').value);
+            if (!isNaN(area) && !isNaN(rainfall)) {
+                let gallonsPerInch = Math.round(area * 0.623);
+                let totalCapture = Math.round(gallonsPerInch * rainfall);
+                document.getElementById('gallonsPerInch').textContent = gallonsPerInch.toLocaleString();
+                document.getElementById('capture').textContent = totalCapture.toLocaleString();
+            }
+        });
 
-            // Address search function (uses Nominatim API)
-            document.getElementById('searchAddress').addEventListener('click', function() {
-                const address = document.getElementById('addressInput').value;
-                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${address}`)
+        document.getElementById('searchAddress').addEventListener('click', function() {
+            let address = document.getElementById('addressInput').value;
+            if (address.trim() !== "") {
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.length > 0) {
-                            const lat = data[0].lat;
-                            const lon = data[0].lon;
-                            leafletMap.setView([lat, lon], 19); // Set zoom to 19 when an address is found
+                            let lat = data[0].lat;
+                            let lon = data[0].lon;
+                            map.setView([lat, lon], 19); // Zooms to level 19 when address is found
                         } else {
-                            alert("Address not found.");
+                            alert("Address not found. Try again.");
                         }
                     })
-                    .catch(error => alert("Error fetching address."));
-            });
-        }
+                    .catch(error => console.error('Error fetching address:', error));
+            }
+        });
     </script>
 </body>
 </html>
