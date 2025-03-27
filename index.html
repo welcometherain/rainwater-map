@@ -33,6 +33,25 @@
         #areasList {
             margin-top: 10px;
         }
+
+        .autocomplete-suggestions {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            max-height: 200px;
+            overflow-y: auto;
+            position: absolute;
+            width: 100%;
+            z-index: 9999;
+        }
+
+        .autocomplete-suggestion {
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        .autocomplete-suggestion:hover {
+            background-color: #e9e9e9;
+        }
     </style>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -70,7 +89,7 @@
                 // Set max zoom level to 19 for more zoom in
                 L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoidGhlcGVybWFjdWx0dXJlbGFiIiwiYSI6ImNtOGs5d2Y5bzBrdGkyanB0aXpsd254a3YifQ.5pF_SIB5dJQGQy-Q6jTExg', {
                     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-                    maxZoom: 22, // Increase max zoom level to 22
+                    maxZoom: 23, // Increase max zoom level to 23
                     id: 'mapbox/satellite-v9',
                     tileSize: 512,
                     zoomOffset: -1,
@@ -104,26 +123,69 @@
                     document.getElementById('gallonsPerInch').textContent = (areaFeet * 0.623).toLocaleString();
                 });
 
-                // Handle address search functionality
-                document.getElementById('searchAddress').addEventListener('click', function() {
-                    const address = document.getElementById('addressInput').value;
-                    const accessToken = 'pk.eyJ1IjoidGhlcGVybWFjdWx0dXJlbGFiIiwiYSI6ImNtOGs5d2Y5bzBrdGkyanB0aXpsd254a3YifQ.5pF_SIB5dJQGQy-Q6jTExg';
-
-                    if (address) {
-                        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${accessToken}`)
+                // Handle address search functionality with autocomplete
+                let addressInput = document.getElementById('addressInput');
+                addressInput.addEventListener('input', function() {
+                    let query = addressInput.value;
+                    if (query.length > 2) {
+                        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=pk.eyJ1IjoidGhlcGVybWFjdWx0dXJlbGFiIiwiYSI6ImNtOGs5d2Y5bzBrdGkyanB0aXpsd254a3YifQ.5pF_SIB5dJQGQy-Q6jTExg`)
                             .then(response => response.json())
                             .then(data => {
-                                if (data.features && data.features.length > 0) {
-                                    const coordinates = data.features[0].center;
-                                    map.setView([coordinates[1], coordinates[0]], 19);  // Zoom level 19 for detailed view
-                                } else {
-                                    alert('Address not found.');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error geocoding address:', error);
-                                alert('An error occurred while searching for the address.');
+                                let suggestions = data.features.map(feature => feature.place_name);
+                                showSuggestions(suggestions);
                             });
+                    } else {
+                        hideSuggestions();
+                    }
+                });
+
+                function showSuggestions(suggestions) {
+                    let suggestionBox = document.createElement('div');
+                    suggestionBox.className = 'autocomplete-suggestions';
+                    suggestions.forEach(suggestion => {
+                        let suggestionItem = document.createElement('div');
+                        suggestionItem.className = 'autocomplete-suggestion';
+                        suggestionItem.textContent = suggestion;
+                        suggestionItem.addEventListener('click', function() {
+                            addressInput.value = suggestion;
+                            hideSuggestions();
+                            searchAddress(suggestion);
+                        });
+                        suggestionBox.appendChild(suggestionItem);
+                    });
+                    document.body.appendChild(suggestionBox);
+                }
+
+                function hideSuggestions() {
+                    let suggestionBox = document.querySelector('.autocomplete-suggestions');
+                    if (suggestionBox) {
+                        suggestionBox.remove();
+                    }
+                }
+
+                function searchAddress(address) {
+                    const accessToken = 'pk.eyJ1IjoidGhlcGVybWFjdWx0dXJlbGFiIiwiYSI6ImNtOGs5d2Y5bzBrdGkyanB0aXpsd254a3YifQ.5pF_SIB5dJQGQy-Q6jTExg';
+                    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${accessToken}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.features && data.features.length > 0) {
+                                const coordinates = data.features[0].center;
+                                map.setView([coordinates[1], coordinates[0]], 19);  // Zoom level 19 for detailed view
+                            } else {
+                                alert('Address not found.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error geocoding address:', error);
+                            alert('An error occurred while searching for the address.');
+                        });
+                }
+
+                // Search button for address
+                document.getElementById('searchAddress').addEventListener('click', function() {
+                    let address = addressInput.value;
+                    if (address) {
+                        searchAddress(address);
                     } else {
                         alert('Please enter an address.');
                     }
