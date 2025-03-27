@@ -74,7 +74,7 @@
             mapboxgl.accessToken = 'pk.eyJ1IjoidGhlcGVybWFjdWx0dXJlbGFiIiwiYSI6ImNtOGs5d2Y5bzBrdGkyanB0aXpsd254a3YifQ.5pF_SIB5dJQGQy-Q6jTExg';
             const map = new mapboxgl.Map({
                 container: 'map',
-                style: 'mapbox://styles/mapbox/satellite-v9', // Hybrid (satellite) view
+                style: 'mapbox://styles/mapbox/satellite-streets-v11', // Hybrid map style (satellite with streets)
                 center: [ -117.1611, 32.7157 ],
                 zoom: 12,
                 maxZoom: 23 // Set max zoom level to 23
@@ -86,8 +86,8 @@
             // Create Leaflet map
             const leafletMap = L.map('map').setView([32.7157, -117.1611], 11);
 
-            // Use Mapbox Satellite Tiles with Leaflet
-            L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token=' + mapboxgl.accessToken, {
+            // Use Mapbox Hybrid Tiles with Leaflet
+            L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=' + mapboxgl.accessToken, {
                 attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery &copy; <a href="https://www.mapbox.com/">Mapbox</a>',
                 maxZoom: 23, // Set max zoom level to 23
             }).addTo(leafletMap);
