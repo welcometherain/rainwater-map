@@ -51,4 +51,64 @@
         Enter Your Annual Rainfall (in inches):
         <input type="number" id="rainfall" />
         <br />
-        <a href="https://precip.ai/rainfall-totals/zipcode
+        <a href="https://precip.ai/rainfall-totals/zipcode/" target="_blank">
+            Find Rainfall by Zip Code
+        </a>
+    </p>
+    <button id="calculate">Calculate</button>
+    <div id="results-space"></div>
+    <p>Area (square feet): <span id="area"></span></p>
+    <p>Potential Annual Rainwater Harvesting in Gallons: <span id="capture"></span></p>
+    <p>Gallons of Rainwater per Inch of Rain: <span id="gallonsPerInch"></span></p>
+    <div id="areasList"></div>
+
+    <script>
+        window.onload = function() {
+            function initializeMap() {
+                const map = L.map('map').setView([32.7157, -117.1611], 11);
+
+                // Mapbox tile layer with your token
+                L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoidGhlcGVybWFjdWx0dXJlbGFiIiwiYSI6ImNtOGs5d2Y5bzBrdGkyanB0aXpsd254a3YifQ.5pF_SIB5dJQGQy-Q6jTExg', {
+                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery &copy; <a href="https://www.mapbox.com">Mapbox</a>',
+                }).addTo(map);
+
+                let drawnItems = new L.FeatureGroup().addTo(map);
+                let drawControl = new L.Control.Draw({
+                    edit: {
+                        featureGroup: drawnItems
+                    },
+                    draw: {
+                        circle: false,
+                        marker: false,
+                        circlemarker: false,
+                        polyline: false,
+                    },
+                });
+
+                map.addControl(drawControl);
+
+                map.on(L.Draw.Event.CREATED, function(event) {
+                    let layer = event.layer;
+                    drawnItems.addLayer(layer);
+                    let geojson = layer.toGeoJSON();
+                    let areaMeters = turf.area(geojson);
+                    let areaFeet = Math.round(areaMeters * 10.7639);
+                    document.getElementById('area').textContent = areaFeet.toLocaleString();
+
+                    // Calculate the potential rainwater capture
+                    let rainfall = document.getElementById('rainfall').value;
+                    let capture = rainfall * areaFeet * 0.623;
+                    document.getElementById('capture').textContent = capture.toLocaleString();
+
+                    // Gallons per inch of rain
+                    let gallonsPerInch = areaFeet * 0.623;
+                    document.getElementById('gallonsPerInch').textContent = gallonsPerInch.toLocaleString();
+                });
+            }
+
+            // Initialize the map
+            initializeMap();
+        };
+    </script>
+</body>
+</html>
