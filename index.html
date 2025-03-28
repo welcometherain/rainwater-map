@@ -12,6 +12,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.14/leaflet.draw.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
+    <!-- Google Places API for Autocomplete -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_API_KEY&libraries=places"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Quattrocento+Sans&display=swap');
 
@@ -23,8 +26,8 @@
 
         /* Updated Instructions Box */
         #instructions {
-            background-color: #2C3E50; /* New Branding Color */
-            color: white; /* Ensure text is readable */
+            background-color: #2C3E50; /* Branding Color */
+            color: white;
             padding: 15px;
             border-left: 5px solid #EC19C2;
             margin-bottom: 20px;
@@ -55,8 +58,8 @@
     <div id="instructions">
         <h2>How to Use This Tool</h2>
         <ol>
-            <li>Enter an address and click <strong>Search</strong> to zoom in on your location.</li>
-            <li>Use the polygon tool to draw around surfaces where rainwater can be collected (e.g., rooftops, driveways).</li>
+            <li>Enter an address and press <strong>Enter</strong> or click <strong>Search</strong> to zoom in.</li>
+            <li>Use the polygon tool to draw around surfaces where rainwater can be collected.</li>
             <li>Adjust the <strong>Annual Rainfall</strong> value if needed (default is 12 inches).</li>
             <li>Click <strong>Calculate</strong> to see potential rainwater capture.</li>
             <li>To remove drawings and reset results, click <strong>Clear Results</strong>.</li>
@@ -65,7 +68,8 @@
 
     <div id="map"></div>
 
-    <p>Enter Address: <input type="text" id="addressInput">
+    <p>Enter Address: 
+        <input type="text" id="addressInput" placeholder="Start typing an address..." autocomplete="off">
         <button id="searchAddress">Search</button>
     </p>
     
@@ -110,8 +114,24 @@
             "Hybrid": hybrid
         }).addTo(map);
 
-        // Address Search
-        document.getElementById('searchAddress').addEventListener('click', function () {
+        // Address Autocomplete using Google Places API
+        function initAutocomplete() {
+            const input = document.getElementById('addressInput');
+            const autocomplete = new google.maps.places.Autocomplete(input);
+            
+            autocomplete.addListener('place_changed', function () {
+                const place = autocomplete.getPlace();
+                if (!place.geometry) return;
+                
+                map.setView([place.geometry.location.lat(), place.geometry.location.lng()], 19);
+            });
+        }
+        
+        // Initialize Autocomplete after the page loads
+        window.onload = initAutocomplete;
+
+        // Address Search (Click or Enter Key)
+        function searchAddress() {
             let address = document.getElementById('addressInput').value;
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${address}`)
                 .then(response => response.json())
@@ -122,6 +142,16 @@
                         map.setView([lat, lon], 19); // Zoom into address
                     }
                 });
+        }
+
+        document.getElementById('searchAddress').addEventListener('click', searchAddress);
+        
+        // Allow "Enter" Key to Trigger Search
+        document.getElementById('addressInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchAddress();
+            }
         });
 
         // Drawing Tool (No Rectangle Option)
