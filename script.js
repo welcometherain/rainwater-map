@@ -8,8 +8,12 @@ async function getRainfall() {
     const zipRes = await fetch(`https://api.zippopotam.us/us/${zip}`);
     if (!zipRes.ok) throw new Error("ZIP not found");
     const zipData = await zipRes.json();
-    const lat = zipData.places[0].latitude;
-    const lon = zipData.places[0].longitude;
+    const lat = parseFloat(zipData.places[0].latitude);
+    const lon = parseFloat(zipData.places[0].longitude);
+
+    // Log for debugging
+    console.log("Lat/Lon:", lat, lon);
+    console.log("Rainfall URL:", `https://climate-api.open-meteo.com/v1/climate?latitude=${lat}&longitude=${lon}&start_year=1991&end_year=2020&models=ERA5`);
 
     // Get Climate data from Open-Meteo
     const climateRes = await fetch(`https://climate-api.open-meteo.com/v1/climate?latitude=${lat}&longitude=${lon}&start_year=1991&end_year=2020&models=ERA5`);
