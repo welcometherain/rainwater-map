@@ -1,232 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rainwater Harvesting Calculator</title>
-    <style>
-        /* Basic styling will go here later */
-        body {
-            font-family: sans-serif;
-            margin: 20px;
-        }
-
-        .input-section {
-            margin-bottom: 20px;
-        }
-
-        .catchment-area {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rainwater Catchment Calculator</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f5e6d3;
+      color: #5c4326;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      color: #5c4326;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+    }
+    input {
+      padding: 0.5rem;
+      width: 100%;
+      margin-top: 0.25rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background-color: #c8a57b;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #a97d51;
+    }
+    #result, #rainfallData {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #fff9f3;
+      border-left: 4px solid #c8a57b;
+    }
+  </style>
 </head>
-
 <body>
-    <h1>Rainwater Harvesting Calculator</h1>
+  <h1>Rainwater Catchment Calculator</h1>
+  <label for="zip">Enter ZIP Code:</label>
+  <input type="text" id="zip" placeholder="e.g., 90210" />
+  <button onclick="getRainfall()">Get Rainfall Data</button>
 
-    <div class="input-section">
-        <h2>Location</h2>
-        <div>
-            <input type="radio" id="zipCodeOption" name="locationType" value="zip" checked>
-            <label for="zipCodeOption">ZIP Code</label>
-            <input type="text" id="zipCode" placeholder="Enter ZIP Code" value="92082">
-        </div>
-        <div>
-            <input type="radio" id="addressOption" name="locationType" value="address">
-            <label for="addressOption">Address</label>
-            <div id="addressFields" style="display: none;">
-                <input type="text" id="street" placeholder="Street Address"><br><br>
-                <input type="text" id="city" placeholder="City">
-                <input type="text" id="state" placeholder="State (e.g., CA)">
-            </div>
-        </div>
-    </div>
+  <label for="area">Catchment Area (sq ft):</label>
+  <input type="number" id="area" placeholder="e.g., 1000" />
 
-    <div class="input-section">
-        <h2>Total Annual Rainfall (inches)</h2>
-        <input type="text" id="annualRainfall" readonly placeholder="Fetching rainfall data...">
-    </div>
+  <label for="rainfall">Annual Rainfall (inches):</label>
+  <input type="text" id="rainfall" placeholder="inches/year" readonly />
 
-    <div class="input-section">
-        <h2>Catchment Areas</h2>
-        <div id="catchmentAreas">
-            <div class="catchment-area">
-                <label for="catchmentName1">Catchment Name:</label>
-                <input type="text" id="catchmentName1" placeholder="e.g., Roof, Patio">
-                <label for="catchmentArea1">Area (sq ft):</label>
-                <input type="number" id="catchmentArea1" placeholder="Enter area in square feet">
-            </div>
-        </div>
-        <button id="addCatchment">Add Catchment Area</button>
-    </div>
+  <button onclick="calculateCatchment()">Calculate Catchment</button>
 
-    <button id="calculateButton">Calculate Harvest</button>
+  <div id="result"></div>
+  <div id="rainfallData"></div>
 
-    <div class="results-section" style="margin-top: 20px;">
-        <h2>Rainfall Data</h2>
-        <div id="rainfallData"></div>
+  <script>
+    async function getRainfall() {
+      const zip = document.getElementById("zip").value;
+      if (!zip) return alert("Please enter a ZIP code.");
 
-        <h2>Harvestable Water</h2>
-        <div id="harvestedWater"></div>
-    </div>
+      try {
+        const zipRes = await fetch(`https://api.zippopotam.us/us/${zip}`);
+        if (!zipRes.ok) throw new Error("ZIP not found");
+        const zipData = await zipRes.json();
+        const lat = parseFloat(zipData.places[0].latitude);
+        const lon = parseFloat(zipData.places[0].longitude);
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const zipCodeOption = document.getElementById('zipCodeOption');
-            const addressOption = document.getElementById('addressOption');
-            const addressFields = document.getElementById('addressFields');
-            const zipCodeInput = document.getElementById('zipCode');
-            const calculateButton = document.getElementById('calculateButton');
-            const rainfallDataDiv = document.getElementById('rainfallData');
+        const apiUrl = `https://climate-api.open-meteo.com/v1/climate?latitude=${lat}&longitude=${lon}&start_year=1991&end_year=2020&models=ERA5`;
 
-            zipCodeOption.addEventListener('change', function () {
-                addressFields.style.display = 'none';
-            });
+        document.getElementById("rainfall").value = "Fetching...";
+        document.getElementById("rainfallData").innerHTML = "";
 
-            addressOption.addEventListener('change', function () {
-                addressFields.style.display = 'block';
-            });
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        const monthly = data?.monthly?.precipitation_sum;
 
-            const addCatchmentButton = document.getElementById('addCatchment');
-            const catchmentAreasDiv = document.getElementById('catchmentAreas');
-            let catchmentCount = 1;
+        if (!monthly || monthly.length !== 12) throw new Error("Invalid climate data");
 
-            addCatchmentButton.addEventListener('click', function () {
-                catchmentCount++;
-                const newCatchmentDiv = document.createElement('div');
-                newCatchmentDiv.classList.add('catchment-area');
-                newCatchmentDiv.innerHTML = `
-                    <label for="catchmentName${catchmentCount}">Catchment Name:</label>
-                    <input type="text" id="catchmentName${catchmentCount}" placeholder="e.g., Garden">
-                    <label for="catchmentArea${catchmentCount}">Area (sq ft):</label>
-                    <input type="number" id="catchmentArea${catchmentCount}" placeholder="Enter area in square feet">
-                `;
-                catchmentAreasDiv.appendChild(newCatchmentDiv);
-            });
+        const monthlyInches = monthly.map(mm => (mm * 0.0393701).toFixed(2));
+        const totalInches = monthly.reduce((sum, mm) => sum + mm, 0) * 0.0393701;
 
-            calculateButton.addEventListener('click', function () {
-                const locationType = document.querySelector('input[name="locationType"]:checked').value;
-                let zipCode;
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        let rainfallText = '<h3>Average Monthly Rainfall (1991–2020):</h3><ul>';
 
-                if (locationType === 'zip') {
-                    zipCode = zipCodeInput.value;
-                    if (zipCode) {
-                        getCoordinatesFromZipCode(zipCode);
-                    } else {
-                        alert('Please enter a ZIP code.');
-                    }
-                } else {
-                    alert('Address lookup is not yet implemented.');
-                }
-            });
-
-            function getCoordinatesFromZipCode(zip) {
-                const apiUrl = `https://api.zippopotam.us/us/${zip}`;
-
-                fetch(apiUrl)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.places && data.places.length > 0) {
-                            const latitude = data.places[0].latitude;
-                            const longitude = data.places[0].longitude;
-                            rainfallDataDiv.innerHTML = `<p>Latitude: ${latitude}</p><p>Longitude: ${longitude}</p>`;
-                            getRainfallData(latitude, longitude);
-                            console.log('Latitude:', latitude, 'Longitude:', longitude);
-                        } else {
-                            rainfallDataDiv.innerHTML = '<p>Invalid ZIP code.</p>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching coordinates:', error);
-                        rainfallDataDiv.innerHTML = '<p>Failed to fetch coordinates. Please try again.</p>';
-                    });
-            }
-
-            function getRainfallData(latitude, longitude) {
-                const startDate = '2020-01-01';
-                const endDate = '2020-12-31';
-                const apiUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&monthly=precipitation_sum&precipitation_unit=inch`;
-                const annualRainfallInput = document.getElementById('annualRainfall');
-                const rainfallDataDiv = document.getElementById('rainfallData');
-
-                annualRainfallInput.value = 'Fetching...';
-                rainfallDataDiv.innerHTML = '';
-
-                fetch(apiUrl)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Full API Response:', data);
-
-                        let rainfallData = null;
-                        let isMonthly = false;
-
-                        if (data.monthly && data.monthly.precipitation_sum && data.monthly.time) {
-                            rainfallData = data.monthly;
-                            isMonthly = true;
-                        } else if (data.daily && data.daily.precipitation_sum && data.daily.time) {
-                            rainfallData = data.daily;
-                        } else {
-                            console.warn('No monthly or daily precipitation data found in API response.');
-                            rainfallDataDiv.innerHTML =
-                                '<p>Unfortunately, we could not retrieve reliable rainfall data for this location. The calculation will not be performed.</p>';
-                            annualRainfallInput.value = 'Data unavailable';
-                            return;
-                        }
-
-                        if (rainfallData) {
-                            const monthlyPrecipitationMm = rainfallData.precipitation_sum;
-                            const monthlyTimes = rainfallData.time;
-                            const monthlyPrecipitationInches = monthlyPrecipitationMm.map(mm => (mm / 25.4).toFixed(2));
-
-                            let rainfallText = '<h3>Monthly Rainfall (2020):</h3><ul>';
-                            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                            let totalAnnualRainfallInches = 0;
-
-                            for (let i = 0; i < monthlyTimes.length; i++) {
-                                let monthIndex;
-                                if (isMonthly) {
-                                    monthIndex = parseInt(monthlyTimes[i].split('-')[1]) - 1;
-                                } else {
-                                    monthIndex = new Date(monthlyTimes[i]).getMonth();
-                                }
-                                const rainfallValue = parseFloat(monthlyPrecipitationInches[i]);
-
-                                if (months[monthIndex] !== undefined && !isNaN(rainfallValue)) {
-                                    rainfallText += `<li>${months[monthIndex]}: ${rainfallValue.toFixed(2)} inches</li>`;
-                                    totalAnnualRainfallInches += rainfallValue;
-                                } else {
-                                    console.warn(`Invalid month index or rainfall value at index ${i}`);
-                                }
-                            }
-
-                            rainfallText += '</ul>';
-                            rainfallDataDiv.innerHTML = rainfallText;
-                            const totalAnnualRainfallRounded = totalAnnualRainfallInches.toFixed(2);
-                            annualRainfallInput.value = totalAnnualRainfallRounded;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching rainfall data:', error);
-                        rainfallDataDiv.innerHTML =
-                            '<p>Failed to fetch rainfall data. Please check your internet connection and try again.</p>';
-                        annualRainfallInput.value = 'Error';
-                    });
-            }
+        monthlyInches.forEach((inches, i) => {
+          rainfallText += `<li>${months[i]}: ${inches} inches</li>`;
         });
-    </script>
-</body>
 
+        rainfallText += '</ul>';
+        document.getElementById("rainfallData").innerHTML = rainfallText;
+        document.getElementById("rainfall").value = totalInches.toFixed(1);
+
+      } catch (err) {
+        alert("Could not fetch rainfall data. Try another ZIP.");
+        console.error(err);
+        document.getElementById("rainfall").value = "Error";
+      }
+    }
+
+    function calculateCatchment() {
+      const area = parseFloat(document.getElementById("area").value);
+      const rainfall = parseFloat(document.getElementById("rainfall").value);
+      if (isNaN(area) || isNaN(rainfall)) {
+        document.getElementById("result").textContent = "Please enter valid numbers.";
+        return;
+      }
+      const gallons = area * rainfall * 0.623;
+      document.getElementById("result").textContent =
+        `You can harvest approximately ${gallons.toFixed(0)} gallons of rainwater per year.`;
+    }
+  </script>
+</body>
 </html>
