@@ -1,16 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rainwater Harvesting Calculator</title>
     <style>
         /* Basic styling will go here later */
-        body { font-family: sans-serif; margin: 20px; }
-        .input-section { margin-bottom: 20px; }
-        .catchment-area { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        .input-section {
+            margin-bottom: 20px;
+        }
+
+        .catchment-area {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
+
 <body>
     <h1>Rainwater Harvesting Calculator</h1>
 
@@ -61,7 +74,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const zipCodeOption = document.getElementById('zipCodeOption');
             const addressOption = document.getElementById('addressOption');
             const addressFields = document.getElementById('addressFields');
@@ -69,11 +82,11 @@
             const calculateButton = document.getElementById('calculateButton');
             const rainfallDataDiv = document.getElementById('rainfallData');
 
-            zipCodeOption.addEventListener('change', function() {
+            zipCodeOption.addEventListener('change', function () {
                 addressFields.style.display = 'none';
             });
 
-            addressOption.addEventListener('change', function() {
+            addressOption.addEventListener('change', function () {
                 addressFields.style.display = 'block';
             });
 
@@ -81,7 +94,7 @@
             const catchmentAreasDiv = document.getElementById('catchmentAreas');
             let catchmentCount = 1;
 
-            addCatchmentButton.addEventListener('click', function() {
+            addCatchmentButton.addEventListener('click', function () {
                 catchmentCount++;
                 const newCatchmentDiv = document.createElement('div');
                 newCatchmentDiv.classList.add('catchment-area');
@@ -94,7 +107,7 @@
                 catchmentAreasDiv.appendChild(newCatchmentDiv);
             });
 
-            calculateButton.addEventListener('click', function() {
+            calculateButton.addEventListener('click', function () {
                 const locationType = document.querySelector('input[name="locationType"]:checked').value;
                 let zipCode;
 
@@ -155,8 +168,8 @@
                         return response.json();
                     })
                     .then(data => {
-                        console.log('Rainfall API Response:', data);
-                        rainfallDataDiv.innerHTML = `<pre>${JSON.stringify(data.monthly, null, 2)}</pre>`;
+                        console.log('Full API Response:', data); // Log the entire data object
+                        rainfallDataDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`; // Display the entire data object
                         if (data.monthly && data.monthly.precipitation_sum && data.monthly.time) {
                             const monthlyPrecipitationMm = data.monthly.precipitation_sum;
                             const monthlyPrecipitationInches = monthlyPrecipitationMm.map(mm => (mm / 25.4).toFixed(2));
@@ -196,5 +209,5 @@
         });
     </script>
 </body>
-</html>
 
+</html>
