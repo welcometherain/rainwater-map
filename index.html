@@ -174,13 +174,24 @@
                         let isMonthly = false;
 
                         if (data.monthly && data.monthly.precipitation_sum && data.monthly.time) {
+                            console.log('Data found in data.monthly');
                             rainfallData = data.monthly;
                             isMonthly = true;
                         } else if (data.daily && data.daily.precipitation_sum && data.daily.time) {
+                            console.log('Data found in data.daily');
                             rainfallData = data.daily;
+                        } else {
+                            console.warn('No monthly or daily precipitation data found in API response.');
+                            rainfallDataDiv.innerHTML = '<p>Could not retrieve rainfall data.</p>';
+                            annualRainfallInput.value = 'Error';
+                            return; // Exit the function if no data is found
                         }
 
                         if (rainfallData) {
+                            console.log('rainfallData:', rainfallData);
+                            console.log('rainfallData.precipitation_sum:', rainfallData.precipitation_sum);
+                            console.log('rainfallData.time:', rainfallData.time);
+
                             const monthlyPrecipitationMm = rainfallData.precipitation_sum;
                             const monthlyTimes = rainfallData.time;
                             const monthlyPrecipitationInches = monthlyPrecipitationMm.map(mm => (mm / 25.4).toFixed(2));
@@ -197,6 +208,8 @@
                                     monthIndex = new Date(monthlyTimes[i]).getMonth(); // Get month index from date string
                                 }
                                 const rainfallValue = parseFloat(monthlyPrecipitationInches[i]);
+                                console.log(`Month Number: ${monthIndex + 1}, Index: ${i}, Rainfall: ${rainfallValue} inches`);
+
                                 if (months[monthIndex] !== undefined && !isNaN(rainfallValue)) {
                                     rainfallText += `<li>${months[monthIndex]}: ${rainfallValue.toFixed(2)} inches</li>`;
                                     totalAnnualRainfallInches += rainfallValue;
@@ -210,9 +223,6 @@
                             const totalAnnualRainfallRounded = totalAnnualRainfallInches.toFixed(2);
                             console.log('Total Annual Rainfall (inches):', totalAnnualRainfallRounded);
                             annualRainfallInput.value = totalAnnualRainfallRounded;
-                        } else {
-                            rainfallDataDiv.innerHTML = '<p>Could not retrieve monthly rainfall data for 2020.</p>';
-                            annualRainfallInput.value = 'Error fetching data';
                         }
                     })
                     .catch(error => {
