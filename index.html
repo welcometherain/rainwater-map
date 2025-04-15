@@ -145,22 +145,24 @@
                         return response.json();
                     })
                     .then(data => {
-                        console.log('Rainfall API Response:', data); // Log the entire response
-                        if (data.monthly && data.monthly.precipitation_sum) {
+                        console.log('Rainfall API Response:', data);
+                        if (data.monthly && data.monthly.precipitation_sum && data.monthly.time) {
                             const monthlyPrecipitationMm = data.monthly.precipitation_sum;
                             const monthlyPrecipitationInches = monthlyPrecipitationMm.map(mm => (mm / 25.4).toFixed(2));
+                            const monthlyTimes = data.monthly.time;
                             let rainfallText = '<h3>Monthly Rainfall (2020):</h3><ul>';
                             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                             let totalAnnualRainfallInches = 0;
-                            for (let i = 0; i < months.length; i++) {
-                                rainfallText += `<li>${months[i]}: ${monthlyPrecipitationInches[i]} inches</li>`;
+                            for (let i = 0; i < monthlyTimes.length; i++) {
+                                const monthIndex = parseInt(monthlyTimes[i].split('-')[1]) - 1;
+                                rainfallText += `<li>${months[monthIndex]}: ${monthlyPrecipitationInches[i]} inches</li>`;
                                 totalAnnualRainfallInches += parseFloat(monthlyPrecipitationInches[i]);
                             }
                             rainfallText += '</ul>';
                             rainfallDataDiv.innerHTML += rainfallText;
                             console.log('Monthly Precipitation (inches):', monthlyPrecipitationInches);
                             console.log('Total Annual Rainfall (inches):', totalAnnualRainfallInches.toFixed(2));
-                            // Next step: We need to display this total annual rainfall and then proceed to the catchment calculation.
+                            // Next step: Autofill the rainfall input
                         } else {
                             rainfallDataDiv.innerHTML += '<p>Could not retrieve monthly rainfall data for 2020.</p>';
                         }
