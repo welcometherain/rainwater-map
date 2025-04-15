@@ -142,8 +142,10 @@
                 const endDate = '2020-12-31';
                 const apiUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&monthly=precipitation_sum`;
                 const annualRainfallInput = document.getElementById('annualRainfall');
+                const rainfallDataDiv = document.getElementById('rainfallData');
 
                 annualRainfallInput.value = 'Fetching...';
+                rainfallDataDiv.innerHTML = '';
 
                 fetch(apiUrl)
                     .then(response => {
@@ -164,23 +166,29 @@
                             console.log('monthlyTimes:', monthlyTimes);
                             console.log('monthlyPrecipitationInches:', monthlyPrecipitationInches);
                             for (let i = 0; i < monthlyTimes.length; i++) {
-                                const monthIndex = parseInt(monthlyTimes[i].split('-')[1]) - 1;
-                                console.log(`Month Time: ${monthlyTimes[i]}, Index: ${monthIndex}, Rainfall: ${monthlyPrecipitationInches[i]}`);
-                                rainfallText += `<li>${months[monthIndex]}: ${monthlyPrecipitationInches[i]} inches</li>`;
-                                totalAnnualRainfallInches += parseFloat(monthlyPrecipitationInches[i]);
+                                const monthNumber = parseInt(monthlyTimes[i].split('-')[1]);
+                                const monthIndex = monthNumber - 1;
+                                const rainfallValue = parseFloat(monthlyPrecipitationInches[i]);
+                                console.log(`Month Number: ${monthNumber}, Index: ${monthIndex}, Rainfall: ${rainfallValue} inches`);
+                                if (months[monthIndex] !== undefined && !isNaN(rainfallValue)) {
+                                    rainfallText += `<li>${months[monthIndex]}: ${rainfallValue.toFixed(2)} inches</li>`;
+                                    totalAnnualRainfallInches += rainfallValue;
+                                } else {
+                                    console.warn(`Invalid month index or rainfall value at index ${i}`);
+                                }
                             }
                             rainfallText += '</ul>';
                             rainfallDataDiv.innerHTML = rainfallText;
                             console.log('Total Annual Rainfall (inches):', totalAnnualRainfallInches.toFixed(2));
                             annualRainfallInput.value = totalAnnualRainfallInches.toFixed(2);
                         } else {
-                            rainfallDataDiv.innerHTML += '<p>Could not retrieve monthly rainfall data for 2020.</p>';
+                            rainfallDataDiv.innerHTML = '<p>Could not retrieve monthly rainfall data for 2020.</p>';
                             annualRainfallInput.value = 'Error fetching data';
                         }
                     })
                     .catch(error => {
                         console.error('Error fetching rainfall data:', error);
-                        rainfallDataDiv.innerHTML += '<p>Failed to fetch rainfall data. Please try again.</p>';
+                        rainfallDataDiv.innerHTML = '<p>Failed to fetch rainfall data. Please try again.</p>';
                         annualRainfallInput.value = 'Error';
                     });
             }
