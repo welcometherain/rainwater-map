@@ -145,6 +145,7 @@
                         return response.json();
                     })
                     .then(data => {
+                        console.log('Rainfall API Response:', data); // Log the entire response
                         if (data.monthly && data.monthly.precipitation_sum) {
                             const monthlyPrecipitationMm = data.monthly.precipitation_sum;
                             const monthlyPrecipitationInches = monthlyPrecipitationMm.map(mm => (mm / 25.4).toFixed(2));
