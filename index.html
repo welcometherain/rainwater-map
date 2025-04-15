@@ -78,14 +78,14 @@
         const lat = parseFloat(zipData.places[0].latitude);
         const lon = parseFloat(zipData.places[0].longitude);
 
-        const apiUrl = `https://climate-api.open-meteo.com/v1/era5?latitude=${lat}&longitude=${lon}&monthly=precipitation_sum&start_year=1991&end_year=2020`;
+        const apiUrl = `https://climate-api.open-meteo.com/v1/climate?latitude=${lat}&longitude=${lon}&start_year=1991&end_year=2020&models=ERA5&monthly_variables=precipitation_sum`;
 
         document.getElementById("rainfall").value = "Fetching...";
         document.getElementById("rainfallData").innerHTML = "";
 
         const response = await fetch(apiUrl);
         const data = await response.json();
-        const monthly = data?.monthly?.precipitation_sum;
+        const monthly = data?.monthly?.precipitation_sum?.ERA5;
 
         if (!monthly || monthly.length !== 12) throw new Error("Invalid climate data");
 
