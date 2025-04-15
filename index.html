@@ -153,7 +153,7 @@
             function getRainfallData(latitude, longitude) {
                 const startDate = '2020-01-01';
                 const endDate = '2020-12-31';
-                const apiUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&monthly=precipitation_sum`;
+                const apiUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${latitude}&longitude=${longitude}&start_date=${startDate}&end_date=${endDate}&monthly=precipitation_sum&precipitation_unit=inch`; // Added precipitation_unit
                 const annualRainfallInput = document.getElementById('annualRainfall');
                 const rainfallDataDiv = document.getElementById('rainfallData');
 
@@ -173,6 +173,9 @@
                         let rainfallData = null;
                         let isMonthly = false;
 
+                        console.log('Checking data.monthly:', data.monthly);
+                        console.log('Checking data.daily:', data.daily);
+
                         if (data.monthly && data.monthly.precipitation_sum && data.monthly.time) {
                             console.log('Data found in data.monthly');
                             rainfallData = data.monthly;
@@ -182,7 +185,7 @@
                             rainfallData = data.daily;
                         } else {
                             console.warn('No monthly or daily precipitation data found in API response.');
-                            rainfallDataDiv.innerHTML = '<p>Could not retrieve rainfall data.</p>';
+                            rainfallDataDiv.innerHTML = '<p>Could not retrieve rainfall data. Please try again later.</p>'; // More user-friendly message
                             annualRainfallInput.value = 'Error';
                             return; // Exit the function if no data is found
                         }
