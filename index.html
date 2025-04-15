@@ -90,28 +90,36 @@
     <div id="areasList"></div>
 
     <script>
-        // Initialize Map with max zoom set to 23
+        // Initialize Map with maxZoom set to 23
         const map = L.map('map', {
-            center: [32.7157, -117.1611], // San Diego Coordinates
-            zoom: 11,                      // Initial zoom level
-            maxZoom: 23                    // Maximum zoom level set to 23
+            center: [32.7157, -117.1611], // Initial coordinates
+            zoom: 19,  // Starting zoom level
+            maxZoom: 23, // Maximum zoom level allowed
+            minZoom: 10  // Minimum zoom level allowed
         });
 
-        // Map Layers: Hybrid Default View
-        const satellite = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+        // Google Maps Hybrid Layer
+        const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
             attribution: '&copy; Google Maps'
         });
 
-        const hybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        // Google Maps Satellite Layer
+        const googleSatellite = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
             attribution: '&copy; Google Maps'
-        }).addTo(map); // Set Hybrid as Default
+        });
 
-        // Layer Controls
+        // Esri World Imagery Layer (up to zoom level 23 in many areas)
+        const esriImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; <a href="https://www.esri.com/en-us/home">Esri</a>'
+        }).addTo(map);  // Add Esri World Imagery by default
+
+        // Layer Control
         L.control.layers({
-            "Satellite": satellite,
-            "Hybrid": hybrid
+            "Google Hybrid": googleHybrid,
+            "Google Satellite": googleSatellite,
+            "Esri Imagery": esriImagery
         }).addTo(map);
 
         // Address Search
