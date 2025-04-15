@@ -156,7 +156,7 @@
                     })
                     .then(data => {
                         console.log('Rainfall API Response:', data);
-                        console.log('Checking if data.monthly exists:', data.monthly);
+                        rainfallDataDiv.innerHTML = `<pre>${JSON.stringify(data.monthly, null, 2)}</pre>`;
                         if (data.monthly && data.monthly.precipitation_sum && data.monthly.time) {
                             const monthlyPrecipitationMm = data.monthly.precipitation_sum;
                             const monthlyPrecipitationInches = monthlyPrecipitationMm.map(mm => (mm / 25.4).toFixed(2));
@@ -197,3 +197,4 @@
     </script>
 </body>
 </html>
+
